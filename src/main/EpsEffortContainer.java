@@ -25,18 +25,7 @@ public class EpsEffortContainer {
             this.epsEffortByDate.put(epsEffort.Calendar, tempList);
         }
     }
-    /**
-     * Explanation:
-     * es geht nur um -> "main map -> epsEffortByDate" !
-     * Im Ersten forLoop erstelle ich eine Map und eine Liste (die Liste ist wichtig, da ich die benutzen werde um sie der map "main map -> epsEffortsByDate" hinzufügen)
-     * Die "existingEpsEffort" Map habe ich nur um mir meine epsEffort objekte kurzzeitig zu speicher für das jeweilige datum durch das ich im ersten ForLoop iteriere
-     * In der If abfrage überprüfe ich ob das "currentEpsEffort" mit der gleichen Projektnummer schon in der Map ist,
-     * falls nicht füge ich es der Liste hinzu und gebe die Liste meiner "main map -> epsEffortsByDate" mit.
-     * Wenn es in der map existingEpsEffort schon ein currentEpsEffort mit dieser Projektnummer gibt, dann merge ich das Objekt
-     * <p>
-     * <p>
-     * Todo Bitte keine weiteren fragen, falls Kopfschmerzen gehen Sie zum Ihren Arzt oder Apotheker.
-     */
+
     public Map<Calendar, List<EpsEffort>> getEpsEfforts() throws ParseException {
         Map<Calendar, List<EpsEffort>> epsEffortsByDate = new HashMap<>();
         for (Map.Entry<Calendar, List<EpsEffort>> allEfforts : epsEffortByDate.entrySet()) {
