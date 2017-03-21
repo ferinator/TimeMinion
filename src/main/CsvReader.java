@@ -2,18 +2,29 @@ package main;
 
 import com.opencsv.CSVReader;
 import data.EpsEffort;
+import javax.swing.*;
+import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class CsvReader {
-    private static String filePath = "C:\\Users\\epsadmin\\Documents\\EPSFocusPlugins\\trunk\\Develop\\TimeMinion\\hours-export(9).csv";
 
     public List<EpsEffort> readCsvFile() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setCurrentDirectory(new java.io.File("."));
+        chooser.setDialogTitle("choosertitle");
+        chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+        chooser.setAcceptAllFileFilterUsed(false);
+        File file = null;
+        if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+            file = chooser.getSelectedFile();
+        }
         List<EpsEffort> epsEffortList = new ArrayList<>();
         List<String[]> errorLines = new ArrayList<>();
         try {
-            CSVReader reader = new CSVReader(new FileReader(filePath));
+            CSVReader reader = new CSVReader(new FileReader(file));
             String[] nextLine;
             while ((nextLine = reader.readNext()) != null) {
                 try {
@@ -26,7 +37,6 @@ public class CsvReader {
             }
         } catch (Exception e) {}
         if (!errorLines.isEmpty()) {
-            //Todo throw exception with information to missing csv - data / incorrect csv - data
             throw new IllegalArgumentException(errorLines.toString());
         }
         return epsEffortList;

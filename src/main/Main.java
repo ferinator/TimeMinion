@@ -1,40 +1,30 @@
 package main;
 
-import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
+import data.EpsEffort;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Map;
+import static main.EpsEffortContainer.convertCalendarDateToString;
+import static main.EpsEffortContainer.convertCalendarStartEndTimeToSting;
 
-import static data.EpsEffort.DATE_FORMAT;
 
-public class Main extends Application {
-
-    @Override
-    public void start(Stage primaryStage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("sample.fxml"));
-        primaryStage.setTitle("Hello World");
-        primaryStage.setScene(new Scene(root, 300, 275));
-        primaryStage.show();
-    }
+public class Main{
 
     public static void main(String[] args) throws ParseException {
-
-
-        // Some Test
-        String dateInString = "02/09/2017";
-        Date date = null;
-        try {
-            date = new SimpleDateFormat(DATE_FORMAT).parse(dateInString);
-        } catch (ParseException e) {
-            e.printStackTrace();
+        CsvReader csvReader = new CsvReader();
+        List<EpsEffort> csvData = csvReader.readCsvFile();
+        EpsEffortContainer epsContainer = new EpsEffortContainer(csvData);
+        SapNavigator.startSelenium();
+        for (Map.Entry<Calendar, List<EpsEffort>> allEfforts : epsContainer.getEpsEfforts().entrySet()) {
+            for (EpsEffort epsEffort : allEfforts.getValue()) {
+                SapNavigator.fillInData(epsEffort.ProjectNumber,
+                                        convertCalendarDateToString(epsEffort.Calendar),
+                                        convertCalendarStartEndTimeToSting(epsEffort.StartTime),
+                                        convertCalendarStartEndTimeToSting(epsEffort.EndTime),
+                                        epsEffort.ExternalComment);
+            }
         }
-
-        EpsEffortContainer epsContainer = new EpsEffortContainer();
-        System.out.println(epsContainer.getEpsEfforts());
-
+        SapNavigator.killDriver();
     }
 }

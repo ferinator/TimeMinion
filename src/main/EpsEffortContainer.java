@@ -1,21 +1,20 @@
 package main;
 
 import data.EpsEffort;
-import java.text.DecimalFormat;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 
 public class EpsEffortContainer {
     private Map<Calendar, List<EpsEffort>> epsEffortByDate;
 
-    public EpsEffortContainer() {
-        List<EpsEffort> epsEffortList = new CsvReader().readCsvFile();
-        sortByDate(epsEffortList);
+    public EpsEffortContainer(List<EpsEffort> csvData) {
+        epsEffortByDate = new HashMap<>();
+        sortByDate(csvData);
     }
 
     private void sortByDate(List<EpsEffort> epsEffortList) {
-        epsEffortByDate = new HashMap<>();
         for (EpsEffort epsEffort : epsEffortList) {
             List<EpsEffort> tempList = epsEffortByDate.get(epsEffort.Calendar);
             if (tempList == null) {
@@ -38,49 +37,67 @@ public class EpsEffortContainer {
                     epsEffortList.add(currentEpsEffort);
                     epsEffortsByDate.put(allEfforts.getKey(), epsEffortList);
                 } else {
-                    currentEpsEffort.mergeEpsEfforts(epsEffort);
+                    epsEffort.addTimeSpan(currentEpsEffort.TimeSpan);
+                    epsEffort.addExternalComment(currentEpsEffort.ExternalComment);
+                    existingEpsEffort.put(epsEffort.ProjectNumber, epsEffort);
                 }
             }
         }
-        //Ab hier werden die Zeiten für die Objekte gesetzt
-        String eightClock = "8:00";
-        for (Map.Entry<Calendar, List<EpsEffort>> allEfforts : epsEffortByDate.entrySet()) {
-            String localStartTime = null;
-            String localEndTime = null;
-            for (EpsEffort epsEffort : allEfforts.getValue()) {
-                if (localStartTime == null) {
-                    epsEffort.StartTime = eightClock;
-                    localStartTime = epsEffort.StartTime;
-                    epsEffort.EndTime = calculateTotalTime(epsEffort, localStartTime);
-                    localEndTime = epsEffort.EndTime;
-                } else {
-                    epsEffort.StartTime = localEndTime;
-                    epsEffort.EndTime = calculateTotalTime(epsEffort, localEndTime);
-                    localEndTime = epsEffort.EndTime;
-                }
-            }
-        }
+        setEpsEffortsTimes(epsEffortsByDate);
         return epsEffortsByDate;
     }
 
-    public static String calculateTotalTime(EpsEffort epsEffort, String localStartOrEndTime){
-        DecimalFormat df = new DecimalFormat("#.##");
-        String[] endTimeArray = String.valueOf(df.format(epsEffort.TimeSpan)).split("\\.");
-        String timeSpanAsString = String.valueOf(Integer.parseInt(endTimeArray[0]) + ":" +   String.valueOf(Integer.parseInt(endTimeArray[1])));
-        int time1 = getTotalMinutes(timeSpanAsString);
-        int time2 = getTotalMinutes(localStartOrEndTime);
-        int totalTime = time1 + time2;
-        return getResult(totalTime);
+    public void setEpsEffortsTimes( Map<Calendar, List<EpsEffort>> epsEffortsByDate) throws ParseException {
+        for (Map.Entry<Calendar, List<EpsEffort>> allEfforts : epsEffortsByDate.entrySet()) {
+            Calendar localStartTime = null;
+            Calendar localEndTime = null;
+            for (EpsEffort epsEffort : allEfforts.getValue()) {
+                if (localStartTime == null) {
+                    epsEffort.StartTime = epsEffort.Calendar;
+                    epsEffort.StartTime.set(Calendar.HOUR, 8);
+                    localStartTime = epsEffort.StartTime;
+                    epsEffort.setTimeSpan(String.valueOf(epsEffort.TimeSpan));
+                    epsEffort.EndTime = calculateTotalTimeDorian(epsEffort.getTimeSpanInMinutes(), localStartTime);
+                    localEndTime = epsEffort.EndTime;
+                } else {
+                    epsEffort.StartTime = localEndTime;
+                    epsEffort.setTimeSpan(String.valueOf(epsEffort.TimeSpan));
+                    epsEffort.EndTime = calculateTotalTimeDorian(epsEffort.getTimeSpanInMinutes(), localEndTime);
+                    localEndTime = epsEffort.EndTime;
+                }
+            }
+        }
     }
 
-    public static int getTotalMinutes(String time) {
-        String[] t = time.split(":");
-        return Integer.valueOf(t[0]) * 60 + Integer.valueOf(t[1]);
+    public static Calendar calculateTotalTimeDorian(int timeSpan, Calendar previousEndTime){
+        Calendar newEndTime = Calendar.getInstance();
+        newEndTime.setTime(previousEndTime.getTime());
+        newEndTime.add(Calendar.MINUTE, timeSpan);
+        return newEndTime;
     }
 
-    public static String getResult(int total) {
-        int minutes = total % 60;
-        int hours = ((total - minutes) / 60) % 24;
-        return String.format("%02d:%02d", hours, minutes);
+    public static String convertCalendarDateToString(Calendar calendar) {
+        Date date = calendar.getTime();
+        SimpleDateFormat format1 = new SimpleDateFormat("dd.MM.yyyy");
+        String inActiveDate = null;
+        try {
+            inActiveDate = format1.format(date);
+        } catch (Exception e1) {
+            e1.printStackTrace();
+        }
+        return inActiveDate;
+    }
+
+    public static String convertCalendarStartEndTimeToSting(Calendar calendar) {
+        calendar.add(Calendar.DATE, 1);
+        Date date = calendar.getTime();
+        SimpleDateFormat format1 = new SimpleDateFormat("HH:mm");
+        String startEndTime = null;
+        try {
+            startEndTime = format1.format(date);
+        } catch (Exception e1) {
+            e1.printStackTrace();
+        }
+        return startEndTime;
     }
 }

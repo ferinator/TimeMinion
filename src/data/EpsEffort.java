@@ -1,15 +1,15 @@
 package data;
 
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+
 public class EpsEffort {
+
     public final static String DATE_FORMAT = "MM/dd/yyyy";
     private SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT, Locale.GERMAN);
     private final static Pattern projectNumberPattern = Pattern.compile("[0-9]{3,5}\\s?-");
@@ -19,10 +19,11 @@ public class EpsEffort {
     public String Task;
     public String Note;
     public Calendar Calendar;
-    public String StartTime;
-    public String EndTime;
+    public Calendar StartTime;
+    public Calendar EndTime;
     public String ExternalComment;
     public double TimeSpan;
+    private int _timeSpanInMinutes;
 
 
     public EpsEffort(String[] nextLine) {
@@ -32,23 +33,43 @@ public class EpsEffort {
             throw new RuntimeException("There is no Project Number ");
         }
         Task = nextLine[2];
-
         try {
-//            this.Calendar = new GregorianCalendar();
-//            this.Calendar.setTime(sdf.parse(nextLine[3]));
             Calendar = java.util.Calendar.getInstance();
             Calendar.setTime(sdf.parse(nextLine[3]));
         } catch (ParseException e) {
             e.printStackTrace();
         }
-
         TimeSpan = Double.parseDouble(nextLine[6]);
         Note = nextLine[7];
         setExtractedProjectNumberFromOtherFields();
+        setExternalComment();
     }
 
-    public void mergeEpsEfforts(EpsEffort currentEpsEffort) {
-        TimeSpan += currentEpsEffort.TimeSpan;
+    public void setTimeSpan(String hoursCommaSeparated) {
+        double hours = Double.parseDouble(hoursCommaSeparated);
+        _timeSpanInMinutes = (int) Math.round(hours * 60);
+    }
+
+    public int getTimeSpanInMinutes() {
+        return _timeSpanInMinutes;
+    }
+
+    public void addExternalComment(String externalComment) {
+        if (!ExternalComment.contains(externalComment)) {
+            ExternalComment = ExternalComment + " " + externalComment;
+        }
+    }
+
+    public void addTimeSpan(double timeSpan) {
+        TimeSpan += timeSpan;
+    }
+
+    public void setExternalComment() {
+        ExternalComment = Note.replaceAll("\"", "");
+
+        if (ExternalComment.isEmpty()) {
+            ExternalComment = Task.replaceAll("\"", "");
+        }
     }
 
     private void setExtractedProjectNumberFromOtherFields() {
@@ -67,9 +88,17 @@ public class EpsEffort {
 
     private String extractProjectNumberByRegEx(String text) {
         Matcher projectNumber = projectNumberPattern.matcher(text);
-
+        String extractedProjectNbmr = "";
         if (projectNumber.find()) {
-            return projectNumber.group(0).replaceAll("\\s?-", "");
+            extractedProjectNbmr = projectNumber.group(0).replaceAll("\\s?-", "");
+        }
+        if (extractedProjectNbmr.length() <= 3 && !extractedProjectNbmr.isEmpty()) {
+            extractedProjectNbmr = "Kostenstelle: Project: " + extractedProjectNbmr;
+            return extractedProjectNbmr;
+        }
+        if (extractedProjectNbmr.length() > 3) {
+            extractedProjectNbmr = "Project: " + extractedProjectNbmr;
+            return extractedProjectNbmr;
         }
         return "";
     }
